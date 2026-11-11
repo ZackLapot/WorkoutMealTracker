@@ -71,6 +71,11 @@ add_executable(export_default_library tools/export_default_library.cpp)
 target_link_libraries(export_default_library PRIVATE wmt_core)
 wmt_enable_warnings(export_default_library)
 
+# ---- developer tool: saves screenshots of the real window (offscreen) -------
+add_executable(capture_screenshots tools/capture_screenshots.cpp)
+target_link_libraries(capture_screenshots PRIVATE wmt_gui)
+wmt_enable_warnings(capture_screenshots)
+
 # ---- unit tests (QtTest + CTest) --------------------------------------------
 enable_testing()
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Test)
