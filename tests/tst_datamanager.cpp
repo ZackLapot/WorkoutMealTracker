@@ -87,6 +87,7 @@ private slots:
     void libraryGarbageGivesBuiltInDefaults();
     void libraryWithSomeBadEntriesKeepsTheGoodOnes();
     void libraryWithNoUsableEntriesIsDamaged();
+    void libraryFileShippedInRepoMatchesBuiltIns();
 
     // workouts
     void workoutsRoundTrip();
@@ -372,6 +373,29 @@ void TstDataManager::libraryWithNoUsableEntriesIsDamaged()
 
     writeFile(qs(manager.libraryPath()), R"({"version":1})"); // list missing entirely
     QCOMPARE(manager.loadLibrary().status, LoadStatus::Damaged);
+}
+
+void TstDataManager::libraryFileShippedInRepoMatchesBuiltIns()
+{
+    // data/exercise_library.json is the sample file shipped with the project
+    QTemporaryDir dir;
+    const QString shipped = QStringLiteral(WMT_SOURCE_DIR) + "/data/exercise_library.json";
+    QVERIFY2(QFile::exists(shipped), qPrintable(shipped));
+    QVERIFY(QFile::copy(shipped, dir.path() + "/exercise_library.json"));
+
+    const DataManager manager(toStd(dir.path()));
+    const auto loaded = manager.loadLibrary();
+    QVERIFY2(loaded.ok(), qPrintable(qs(loaded.message)));
+
+    const ExerciseLibrary expected = ExerciseLibrary::builtInDefaults();
+    QCOMPARE(static_cast<int>(loaded.value.size()), static_cast<int>(expected.size()));
+    for (const auto& exercise : expected.all()) {
+        const auto match = loaded.value.find(exercise->name());
+        QVERIFY2(match != nullptr, qPrintable(qs(exercise->name())));
+        QCOMPARE(match->met(), exercise->met());
+        QCOMPARE(match->category(), exercise->category());
+        QCOMPARE(qs(match->typeName()), qs(exercise->typeName()));
+    }
 }
 
 // ---- workouts -----------------------------------------------------------------------------------

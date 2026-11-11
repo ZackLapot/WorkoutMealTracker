@@ -54,6 +54,11 @@ add_executable(WorkoutMealTracker src/main.cpp)
 target_link_libraries(WorkoutMealTracker PRIVATE wmt_core Qt${QT_VERSION_MAJOR}::Widgets)
 wmt_enable_warnings(WorkoutMealTracker)
 
+# ---- developer tool: regenerates data/exercise_library.json -----------------
+add_executable(export_default_library tools/export_default_library.cpp)
+target_link_libraries(export_default_library PRIVATE wmt_core)
+wmt_enable_warnings(export_default_library)
+
 # ---- unit tests (QtTest + CTest) --------------------------------------------
 enable_testing()
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Test)
@@ -61,6 +66,7 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Test)
 function(wmt_add_test name)
     add_executable(${name} tests/${name}.cpp)
     target_link_libraries(${name} PRIVATE wmt_core Qt${QT_VERSION_MAJOR}::Test)
+    target_compile_definitions(${name} PRIVATE WMT_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
     wmt_enable_warnings(${name})
     add_test(NAME ${name} COMMAND ${name})
 endfunction()

@@ -1,0 +1,285 @@
+{
+    "exercises": [
+        {
+            "category": "Back",
+            "met": 5,
+            "name": "Barbell Row",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Chest",
+            "met": 5,
+            "name": "Bench Press",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Arms",
+            "met": 3.5,
+            "name": "Bicep Curl",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Cardio",
+            "met": 4.3,
+            "name": "Brisk Walking",
+            "type": "cardio"
+        },
+        {
+            "category": "Legs",
+            "met": 3.5,
+            "name": "Calf Raise",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Chest",
+            "met": 3.5,
+            "name": "Chest Fly",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Core",
+            "met": 3.8,
+            "name": "Crunch",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Cardio",
+            "met": 8,
+            "name": "Cycling",
+            "type": "cardio"
+        },
+        {
+            "category": "Back",
+            "met": 6,
+            "name": "Deadlift",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Cardio",
+            "met": 5,
+            "name": "Elliptical",
+            "type": "cardio"
+        },
+        {
+            "category": "Shoulders",
+            "met": 3.5,
+            "name": "Face Pull",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Arms",
+            "met": 3.5,
+            "name": "Hammer Curl",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Core",
+            "met": 4,
+            "name": "Hanging Leg Raise",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Cardio",
+            "met": 6,
+            "name": "Hiking",
+            "type": "cardio"
+        },
+        {
+            "category": "Chest",
+            "met": 5,
+            "name": "Incline Dumbbell Press",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Cardio",
+            "met": 7,
+            "name": "Jogging",
+            "type": "cardio"
+        },
+        {
+            "category": "Cardio",
+            "met": 11.8,
+            "name": "Jump Rope",
+            "type": "cardio"
+        },
+        {
+            "category": "Back",
+            "met": 4,
+            "name": "Lat Pulldown",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Shoulders",
+            "met": 3.5,
+            "name": "Lateral Raise",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Legs",
+            "met": 3.5,
+            "name": "Leg Curl",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Legs",
+            "met": 5,
+            "name": "Leg Press",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Legs",
+            "met": 4.5,
+            "name": "Lunge",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Shoulders",
+            "met": 5,
+            "name": "Overhead Press",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Back",
+            "met": 5,
+            "name": "Pull-Up",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Chest",
+            "met": 3.8,
+            "name": "Push-Up",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Legs",
+            "met": 5.5,
+            "name": "Romanian Deadlift",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Cardio",
+            "met": 7,
+            "name": "Rowing Machine",
+            "type": "cardio"
+        },
+        {
+            "category": "Cardio",
+            "met": 9.8,
+            "name": "Running",
+            "type": "cardio"
+        },
+        {
+            "category": "Core",
+            "met": 3.8,
+            "name": "Russian Twist",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Back",
+            "met": 4,
+            "name": "Seated Cable Row",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Core",
+            "met": 3.8,
+            "name": "Sit-Up",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Legs",
+            "met": 6,
+            "name": "Squat",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Cardio",
+            "met": 9,
+            "name": "Stair Climber",
+            "type": "cardio"
+        },
+        {
+            "category": "Cardio",
+            "met": 7,
+            "name": "Stationary Bike",
+            "type": "cardio"
+        },
+        {
+            "category": "Cardio",
+            "met": 5.8,
+            "name": "Swimming",
+            "type": "cardio"
+        },
+        {
+            "category": "Arms",
+            "met": 4.5,
+            "name": "Tricep Dip",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Arms",
+            "met": 3.5,
+            "name": "Tricep Pushdown",
+            "sets": [
+            ],
+            "type": "strength"
+        },
+        {
+            "category": "Cardio",
+            "met": 3.5,
+            "name": "Walking",
+            "type": "cardio"
+        }
+    ],
+    "version": 1
+}
