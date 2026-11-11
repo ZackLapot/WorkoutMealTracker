@@ -38,6 +38,10 @@ add_library(wmt_core STATIC
     src/core/UserProfile.cpp
     src/core/ExerciseLibrary.h
     src/core/ExerciseLibrary.cpp
+    src/core/WorkoutSession.h
+    src/core/WorkoutSession.cpp
+    src/core/WorkoutLog.h
+    src/core/WorkoutLog.cpp
 )
 wmt_enable_warnings(wmt_core)
 
@@ -61,3 +65,4 @@ wmt_add_test(tst_validation)
 wmt_add_test(tst_exercises)
 wmt_add_test(tst_profile)
 wmt_add_test(tst_library)
+wmt_add_test(tst_workout)
