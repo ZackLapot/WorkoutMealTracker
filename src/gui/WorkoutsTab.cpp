@@ -18,6 +18,7 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QSignalBlocker>
+#include <QStackedWidget>
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QVBoxLayout>
@@ -153,6 +154,58 @@ void WorkoutsTab::buildUi()
     removeRow->addWidget(removeExerciseButton_);
     exercisesLayout->addLayout(removeRow);
 
+    // ----- log panel (changes with the type of the selected exercise) -----
+    auto* hintPage = new QLabel("Select an exercise in the table above to log sets or a cardio session.");
+    hintPage->setWordWrap(true);
+    hintPage->setAlignment(Qt::AlignCenter);
+
+    repsEdit_ = new QLineEdit;
+    repsEdit_->setObjectName("setRepsEdit");
+    repsEdit_->setPlaceholderText("reps");
+    setWeightEdit_ = new QLineEdit;
+    setWeightEdit_->setObjectName("setWeightEdit");
+    setWeightEdit_->setPlaceholderText("kg (0 = bodyweight)");
+    addSetButton_ = new QPushButton("Add set");
+    addSetButton_->setObjectName("addSetButton");
+    removeSetButton_ = new QPushButton("Remove last set");
+    removeSetButton_->setObjectName("removeSetButton");
+
+    auto* strengthPage = new QWidget;
+    auto* strengthLayout = new QHBoxLayout(strengthPage);
+    strengthLayout->addWidget(new QLabel("Reps"));
+    strengthLayout->addWidget(repsEdit_, 1);
+    strengthLayout->addWidget(new QLabel("Weight (kg)"));
+    strengthLayout->addWidget(setWeightEdit_, 1);
+    strengthLayout->addWidget(addSetButton_);
+    strengthLayout->addWidget(removeSetButton_);
+
+    durationEdit_ = new QLineEdit;
+    durationEdit_->setObjectName("cardioDurationEdit");
+    durationEdit_->setPlaceholderText("minutes");
+    distanceEdit_ = new QLineEdit;
+    distanceEdit_->setObjectName("cardioDistanceEdit");
+    distanceEdit_->setPlaceholderText("km (optional)");
+    logCardioButton_ = new QPushButton("Log cardio");
+    logCardioButton_->setObjectName("logCardioButton");
+
+    auto* cardioPage = new QWidget;
+    auto* cardioLayout = new QHBoxLayout(cardioPage);
+    cardioLayout->addWidget(new QLabel("Duration (min)"));
+    cardioLayout->addWidget(durationEdit_, 1);
+    cardioLayout->addWidget(new QLabel("Distance (km)"));
+    cardioLayout->addWidget(distanceEdit_, 1);
+    cardioLayout->addWidget(logCardioButton_);
+
+    logStack_ = new QStackedWidget;
+    logStack_->setObjectName("logStack");
+    logStack_->addWidget(hintPage);     // 0
+    logStack_->addWidget(strengthPage); // 1
+    logStack_->addWidget(cardioPage);   // 2
+
+    logBox_ = new QGroupBox("Log sets or cardio");
+    auto* logLayout = new QVBoxLayout(logBox_);
+    logLayout->addWidget(logStack_);
+
     totalLabel_ = new QLabel;
     totalLabel_->setObjectName("totalLabel");
     totalLabel_->setStyleSheet("font-weight: bold;");
@@ -168,6 +221,7 @@ void WorkoutsTab::buildUi()
     right->addWidget(selectedLabel_);
     right->addWidget(libraryBox);
     right->addWidget(exercisesBox, 1);
+    right->addWidget(logBox_);
     right->addWidget(totalLabel_);
     right->addWidget(errorLabel_);
 
@@ -197,6 +251,14 @@ void WorkoutsTab::buildUi()
     connect(removeExerciseButton_, &QPushButton::clicked, this, &WorkoutsTab::onRemoveExercise);
     connect(exerciseTable_, &QTableWidget::itemSelectionChanged, this,
             &WorkoutsTab::onExerciseSelectionChanged);
+
+    connect(addSetButton_, &QPushButton::clicked, this, &WorkoutsTab::onAddSet);
+    connect(setWeightEdit_, &QLineEdit::returnPressed, this, &WorkoutsTab::onAddSet);
+    connect(repsEdit_, &QLineEdit::returnPressed, this, &WorkoutsTab::onAddSet);
+    connect(removeSetButton_, &QPushButton::clicked, this, &WorkoutsTab::onRemoveLastSet);
+    connect(logCardioButton_, &QPushButton::clicked, this, &WorkoutsTab::onLogCardio);
+    connect(distanceEdit_, &QLineEdit::returnPressed, this, &WorkoutsTab::onLogCardio);
+    connect(durationEdit_, &QLineEdit::returnPressed, this, &WorkoutsTab::onLogCardio);
 }
 
 // ---- filling the widgets ---------------------------------------------------------------------
@@ -265,6 +327,7 @@ void WorkoutsTab::refreshWorkoutDetails(const QString& keepExercise)
     }
     populateExerciseTable(session, keepExercise);
     updateTotals(session);
+    updateLogPage();
 }
 
 void WorkoutsTab::populateExerciseTable(const WorkoutSession* session, const QString& keepExercise)
@@ -306,6 +369,25 @@ void WorkoutsTab::updateTotals(const WorkoutSession* session)
     totalLabel_->setText(QString("Total calories burned in this workout: %1 kcal "
                                  "(estimated for %2 kg body weight)")
                              .arg(oneDecimal(kcal), qs(validation::formatNumber(profile_.weightKg()))));
+}
+
+void WorkoutsTab::updateLogPage()
+{
+    Exercise* exercise = selectedExercise();
+
+    if (dynamic_cast<StrengthExercise*>(exercise)) {
+        logStack_->setCurrentIndex(1);
+        logBox_->setTitle("Log sets for " + qs(exercise->name()));
+    } else if (const auto* cardio = dynamic_cast<CardioExercise*>(exercise)) {
+        logStack_->setCurrentIndex(2);
+        logBox_->setTitle("Log cardio for " + qs(exercise->name()));
+        // show what was logged before so it can be corrected
+        durationEdit_->setText(cardio->isLogged() ? qs(validation::formatNumber(cardio->durationMin())) : QString());
+        distanceEdit_->setText(cardio->distanceKm() > 0.0 ? qs(validation::formatNumber(cardio->distanceKm())) : QString());
+    } else {
+        logStack_->setCurrentIndex(0);
+        logBox_->setTitle("Log sets or cardio");
+    }
 }
 
 void WorkoutsTab::refreshCalories()
@@ -467,9 +549,85 @@ void WorkoutsTab::onRemoveExercise()
 void WorkoutsTab::onExerciseSelectionChanged()
 {
     clearError();
+    updateLogPage();
+}
+
+void WorkoutsTab::onAddSet()
+{
+    clearError();
+    auto* strength = dynamic_cast<StrengthExercise*>(selectedExercise());
+    if (!strength) {
+        showError("Select a strength exercise in the workout first.");
+        return;
+    }
+
+    try {
+        const int reps = validation::parseInt(repsEdit_->text().toStdString(), "Reps");
+        const double weightKg = validation::parseDouble(setWeightEdit_->text().toStdString(), "Weight");
+        strength->addSet(reps, weightKg); // checks the limits
+    } catch (const TrackerError& error) {
+        showError(qs(error.what()));
+        return;
+    }
+
+    const QString name = qs(strength->name());
+    refreshAfterChange();
+    emit statusMessage("Added a set to '" + name + "'.");
+    repsEdit_->setFocus();
+    repsEdit_->selectAll();
+}
+
+void WorkoutsTab::onRemoveLastSet()
+{
+    clearError();
+    auto* strength = dynamic_cast<StrengthExercise*>(selectedExercise());
+    if (!strength) {
+        showError("Select a strength exercise in the workout first.");
+        return;
+    }
+    if (!strength->removeLastSet()) {
+        showError("There are no sets to remove.");
+        return;
+    }
+    refreshAfterChange();
+}
+
+void WorkoutsTab::onLogCardio()
+{
+    clearError();
+    auto* cardio = dynamic_cast<CardioExercise*>(selectedExercise());
+    if (!cardio) {
+        showError("Select a cardio exercise in the workout first.");
+        return;
+    }
+
+    try {
+        const double minutes = validation::parseDouble(durationEdit_->text().toStdString(), "Duration");
+        // distance is optional: blank means "not recorded"
+        const std::string distanceText = validation::trim(distanceEdit_->text().toStdString());
+        const double distanceKm = distanceText.empty() ? 0.0 : validation::parseDouble(distanceText, "Distance");
+        cardio->logSession(minutes, distanceKm); // checks the limits
+    } catch (const TrackerError& error) {
+        showError(qs(error.what()));
+        return;
+    }
+
+    const QString name = qs(cardio->name());
+    refreshAfterChange();
+    emit statusMessage("Logged cardio for '" + name + "'.");
 }
 
 // ---- helpers ------------------------------------------------------------------------------------------
+
+void WorkoutsTab::refreshAfterChange()
+{
+    // copy what is selected first: the lists are rebuilt below
+    const QListWidgetItem* item = workoutList_->currentItem();
+    const QString date = item ? item->data(kDateRole).toString() : QString();
+    const QString name = item ? item->data(kNameRole).toString() : QString();
+    populateWorkoutList(date, name, selectedExerciseName());
+    persist();
+}
 
 bool WorkoutsTab::persist()
 {

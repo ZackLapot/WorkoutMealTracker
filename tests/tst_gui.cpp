@@ -14,6 +14,7 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QPushButton>
+#include <QStackedWidget>
 #include <QStatusBar>
 #include <QTabWidget>
 #include <QTableWidget>
@@ -83,6 +84,20 @@ QString cell(const Fixture& f, int row, int column)
     return f.find<QTableWidget>("exerciseTable")->item(row, column)->text();
 }
 
+void addSet(const Fixture& f, const QString& reps, const QString& weight)
+{
+    f.find<QLineEdit>("setRepsEdit")->setText(reps);
+    f.find<QLineEdit>("setWeightEdit")->setText(weight);
+    f.find<QPushButton>("addSetButton")->click();
+}
+
+void logCardio(const Fixture& f, const QString& minutes, const QString& km)
+{
+    f.find<QLineEdit>("cardioDurationEdit")->setText(minutes);
+    f.find<QLineEdit>("cardioDistanceEdit")->setText(km);
+    f.find<QPushButton>("logCardioButton")->click();
+}
+
 } // namespace
 
 class TstGui : public QObject {
@@ -109,6 +124,21 @@ private slots:
     void deleteWorkout();
     void switchingBetweenWorkoutsShowsTheirExercises();
     void workoutsSurviveARestart();
+
+    // Workouts tab: logging sets and cardio
+    void logPanelFollowsTheSelectedExercise();
+    void strengthSetsAreLoggedWithCalories();
+    void invalidSetInputShowsMessage_data();
+    void invalidSetInputShowsMessage();
+    void setLimitIsEnforced();
+    void removeLastSetWorks();
+    void cardioIsLoggedAndCanBeCorrected();
+    void invalidCardioInputShowsMessage_data();
+    void invalidCardioInputShowsMessage();
+    void loggingForTheWrongKindOfExerciseIsRefused();
+    void workoutTotalAddsAllExercises();
+    void changingBodyWeightRecalculatesCalories();
+    void loggedDataSurvivesARestart();
 };
 
 // ---- start-up ----------------------------------------------------------------------------
@@ -459,6 +489,258 @@ void TstGui::workoutsSurviveARestart()
     QVERIFY(list->item(0)->text().contains("(2 exercises)"));
     list->setCurrentRow(0);
     QCOMPARE(f.find<QTableWidget>("exerciseTable")->rowCount(), 2);
+}
+
+// ---- Workouts tab: logging ------------------------------------------------------------------------
+
+void TstGui::logPanelFollowsTheSelectedExercise()
+{
+    Fixture f;
+    auto* stack = f.find<QStackedWidget>("logStack");
+    auto* table = f.find<QTableWidget>("exerciseTable");
+
+    QCOMPARE(stack->currentIndex(), 0); // hint page: nothing selected
+    createWorkout(f, "Mixed");
+    QCOMPARE(stack->currentIndex(), 0);
+
+    addFromLibrary(f, "bench");   // the new exercise is selected automatically
+    QCOMPARE(stack->currentIndex(), 1);
+    addFromLibrary(f, "running");
+    QCOMPARE(stack->currentIndex(), 2);
+
+    table->setCurrentCell(0, 0);
+    QCOMPARE(stack->currentIndex(), 1);
+    table->setCurrentCell(1, 0);
+    QCOMPARE(stack->currentIndex(), 2);
+}
+
+void TstGui::strengthSetsAreLoggedWithCalories()
+{
+    Fixture f; // no profile saved -> default profile, 70 kg
+    createWorkout(f, "Push Day");
+    addFromLibrary(f, "bench");
+
+    for (int i = 0; i < 3; ++i) {
+        addSet(f, "10", "60");
+        QCOMPARE(workoutsError(f), QString());
+    }
+    QCOMPARE(cell(f, 0, 2), QStringLiteral("3 sets: 10 x 60 kg, 10 x 60 kg, 10 x 60 kg"));
+    QCOMPARE(cell(f, 0, 3), QStringLiteral("29.2")); // MET 5 x 70 kg x 300 s
+    QCOMPARE(f.find<QLabel>("totalLabel")->text(),
+             QStringLiteral("Total calories burned in this workout: 29.2 kcal (estimated for 70 kg body weight)"));
+    QCOMPARE(f.find<QStackedWidget>("logStack")->currentIndex(), 1); // exercise stays selected
+
+    addSet(f, "8", "62.5");
+    QVERIFY(cell(f, 0, 2).endsWith("8 x 62.5 kg"));
+
+    // bodyweight set
+    addSet(f, "15", "0");
+    QVERIFY(cell(f, 0, 2).endsWith("15 x bodyweight"));
+}
+
+void TstGui::invalidSetInputShowsMessage_data()
+{
+    QTest::addColumn<QString>("reps");
+    QTest::addColumn<QString>("weight");
+    QTest::addColumn<QString>("expectedMessage");
+
+    QTest::newRow("reps empty") << "" << "60" << "Reps is required.";
+    QTest::newRow("reps zero") << "0" << "60" << "Reps must be between 1 and 100.";
+    QTest::newRow("reps too many") << "101" << "60" << "Reps must be between 1 and 100.";
+    QTest::newRow("reps negative") << "-4" << "60" << "Reps must be between 1 and 100.";
+    QTest::newRow("reps letters") << "ten" << "60" << "Reps must be a whole number.";
+    QTest::newRow("reps decimal") << "5.5" << "60" << "Reps must be a whole number.";
+    QTest::newRow("weight empty") << "10" << "" << "Weight is required.";
+    QTest::newRow("weight negative") << "10" << "-1" << "Weight must be between 0 and 1000 kg.";
+    QTest::newRow("weight too heavy") << "10" << "1001" << "Weight must be between 0 and 1000 kg.";
+    QTest::newRow("weight letters") << "10" << "heavy" << "Weight must be a number.";
+    QTest::newRow("weight comma") << "10" << "62,5" << "Weight must be a number (use a dot for decimals).";
+}
+
+void TstGui::invalidSetInputShowsMessage()
+{
+    QFETCH(QString, reps);
+    QFETCH(QString, weight);
+    QFETCH(QString, expectedMessage);
+
+    Fixture f;
+    createWorkout(f, "Push Day");
+    addFromLibrary(f, "bench");
+
+    addSet(f, reps, weight);
+    QCOMPARE(workoutsError(f), expectedMessage);
+    QCOMPARE(cell(f, 0, 2), QStringLiteral("No sets logged")); // nothing was added
+
+    // after correcting the input the same screen works
+    addSet(f, "10", "60");
+    QCOMPARE(workoutsError(f), QString());
+    QCOMPARE(cell(f, 0, 2), QStringLiteral("1 set: 10 x 60 kg"));
+}
+
+void TstGui::setLimitIsEnforced()
+{
+    Fixture f;
+    createWorkout(f, "Push Day");
+    addFromLibrary(f, "curl");
+    for (int i = 0; i < 50; ++i) {
+        addSet(f, "10", "10");
+    }
+    QCOMPARE(workoutsError(f), QString());
+    addSet(f, "10", "10"); // the 51st
+    QCOMPARE(workoutsError(f), QStringLiteral("An exercise can have at most 50 sets."));
+    QVERIFY(cell(f, 0, 2).startsWith("50 sets:"));
+}
+
+void TstGui::removeLastSetWorks()
+{
+    Fixture f;
+    createWorkout(f, "Push Day");
+    addFromLibrary(f, "bench");
+
+    f.find<QPushButton>("removeSetButton")->click();
+    QCOMPARE(workoutsError(f), QStringLiteral("There are no sets to remove."));
+
+    addSet(f, "10", "60");
+    addSet(f, "8", "65");
+    f.find<QPushButton>("removeSetButton")->click();
+    QCOMPARE(workoutsError(f), QString());
+    QCOMPARE(cell(f, 0, 2), QStringLiteral("1 set: 10 x 60 kg"));
+}
+
+void TstGui::cardioIsLoggedAndCanBeCorrected()
+{
+    Fixture f;
+    createWorkout(f, "Run");
+    addFromLibrary(f, "running");
+    QCOMPARE(f.find<QStackedWidget>("logStack")->currentIndex(), 2);
+
+    logCardio(f, "30", "5");
+    QCOMPARE(workoutsError(f), QString());
+    QCOMPARE(cell(f, 0, 2), QStringLiteral("30 min, 5 km (10 km/h)"));
+    QCOMPARE(cell(f, 0, 3), QStringLiteral("343")); // MET 9.8 x 70 kg x 0.5 h
+    QVERIFY(f.find<QLabel>("totalLabel")->text().contains("343 kcal"));
+
+    // logging again replaces the earlier values; distance is optional
+    logCardio(f, "45", "");
+    QCOMPARE(workoutsError(f), QString());
+    QCOMPARE(cell(f, 0, 2), QStringLiteral("45 min"));
+    QCOMPARE(cell(f, 0, 3), QStringLiteral("514.5")); // 9.8 x 70 x 0.75
+
+    // the log fields show the stored values again when the exercise is re-selected
+    f.find<QTableWidget>("exerciseTable")->setCurrentCell(-1, -1);
+    f.find<QTableWidget>("exerciseTable")->setCurrentCell(0, 0);
+    QCOMPARE(f.find<QLineEdit>("cardioDurationEdit")->text(), QStringLiteral("45"));
+    QCOMPARE(f.find<QLineEdit>("cardioDistanceEdit")->text(), QString());
+}
+
+void TstGui::invalidCardioInputShowsMessage_data()
+{
+    QTest::addColumn<QString>("minutes");
+    QTest::addColumn<QString>("km");
+    QTest::addColumn<QString>("expectedMessage");
+
+    QTest::newRow("duration empty") << "" << "5" << "Duration is required.";
+    QTest::newRow("duration letters") << "abc" << "5" << "Duration must be a number.";
+    QTest::newRow("duration zero") << "0" << "5" << "Duration must be between 1 and 600 minutes.";
+    QTest::newRow("duration negative") << "-10" << "5" << "Duration must be between 1 and 600 minutes.";
+    QTest::newRow("duration too long") << "601" << "5" << "Duration must be between 1 and 600 minutes.";
+    QTest::newRow("distance letters") << "30" << "far" << "Distance must be a number.";
+    QTest::newRow("distance negative") << "30" << "-1" << "Distance must be between 0 and 500 km.";
+    QTest::newRow("distance too far") << "30" << "501" << "Distance must be between 0 and 500 km.";
+}
+
+void TstGui::invalidCardioInputShowsMessage()
+{
+    QFETCH(QString, minutes);
+    QFETCH(QString, km);
+    QFETCH(QString, expectedMessage);
+
+    Fixture f;
+    createWorkout(f, "Run");
+    addFromLibrary(f, "running");
+
+    logCardio(f, minutes, km);
+    QCOMPARE(workoutsError(f), expectedMessage);
+    QCOMPARE(cell(f, 0, 2), QStringLiteral("Not logged"));
+    QCOMPARE(cell(f, 0, 3), QStringLiteral("0"));
+}
+
+void TstGui::loggingForTheWrongKindOfExerciseIsRefused()
+{
+    Fixture f;
+    createWorkout(f, "Mixed");
+    addFromLibrary(f, "bench");
+    addFromLibrary(f, "running");
+
+    auto* table = f.find<QTableWidget>("exerciseTable");
+    table->setCurrentCell(1, 0); // Running selected, but "Add set" is for strength
+    addSet(f, "10", "60");
+    QCOMPARE(workoutsError(f), QStringLiteral("Select a strength exercise in the workout first."));
+    table->setCurrentCell(0, 0); // Bench Press selected, but "Log cardio" is for cardio
+    logCardio(f, "30", "5");
+    QCOMPARE(workoutsError(f), QStringLiteral("Select a cardio exercise in the workout first."));
+
+    // nothing selected at all
+    table->setCurrentCell(-1, -1);
+    addSet(f, "10", "60");
+    QCOMPARE(workoutsError(f), QStringLiteral("Select a strength exercise in the workout first."));
+    QCOMPARE(cell(f, 0, 2), QStringLiteral("No sets logged"));
+    QCOMPARE(cell(f, 1, 2), QStringLiteral("Not logged"));
+}
+
+void TstGui::workoutTotalAddsAllExercises()
+{
+    Fixture f;
+    createWorkout(f, "Mixed");
+    addFromLibrary(f, "bench");
+    for (int i = 0; i < 3; ++i) {
+        addSet(f, "10", "60");
+    }
+    addFromLibrary(f, "running");
+    logCardio(f, "30", "5");
+
+    // 29.1667 + 343.0 = 372.1667
+    QVERIFY2(f.find<QLabel>("totalLabel")->text().contains("372.2 kcal"),
+             qPrintable(f.find<QLabel>("totalLabel")->text()));
+}
+
+void TstGui::changingBodyWeightRecalculatesCalories()
+{
+    Fixture f;
+    createWorkout(f, "Push Day");
+    addFromLibrary(f, "bench");
+    for (int i = 0; i < 3; ++i) {
+        addSet(f, "10", "60");
+    }
+    QCOMPARE(cell(f, 0, 3), QStringLiteral("29.2")); // default 70 kg
+
+    // save a 140 kg profile in the Profile tab: the Workouts tab must follow
+    setProfileFields(f, "Demo User", "28", "175", "140", "2200");
+    f.find<QPushButton>("saveProfileButton")->click();
+    QCOMPARE(f.find<QLabel>("profileError")->text(), QString());
+
+    QCOMPARE(cell(f, 0, 3), QStringLiteral("58.3"));
+    QVERIFY(f.find<QLabel>("totalLabel")->text().contains("58.3 kcal"));
+    QVERIFY(f.find<QLabel>("totalLabel")->text().contains("140 kg"));
+}
+
+void TstGui::loggedDataSurvivesARestart()
+{
+    Fixture f;
+    createWorkout(f, "Mixed");
+    addFromLibrary(f, "bench");
+    addSet(f, "10", "60");
+    addSet(f, "8", "62.5");
+    addFromLibrary(f, "running");
+    logCardio(f, "32.5", "5.25");
+    f.close();
+
+    f.open();
+    f.find<QListWidget>("workoutList")->setCurrentRow(0);
+    QCOMPARE(cell(f, 0, 0), QStringLiteral("Bench Press"));
+    QCOMPARE(cell(f, 0, 2), QStringLiteral("2 sets: 10 x 60 kg, 8 x 62.5 kg"));
+    QCOMPARE(cell(f, 1, 0), QStringLiteral("Running"));
+    QCOMPARE(cell(f, 1, 2), QStringLiteral("32.5 min, 5.25 km (9.7 km/h)"));
 }
 
 QTEST_MAIN(TstGui)

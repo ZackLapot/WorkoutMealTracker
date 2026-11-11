@@ -10,10 +10,12 @@
 
 class QComboBox;
 class QDateEdit;
+class QGroupBox;
 class QLabel;
 class QLineEdit;
 class QListWidget;
 class QPushButton;
+class QStackedWidget;
 class QTableWidget;
 
 // Tab for building and logging workouts:
@@ -50,6 +52,9 @@ private slots:
     void onAddExercise();
     void onRemoveExercise();
     void onExerciseSelectionChanged();
+    void onAddSet();
+    void onRemoveLastSet();
+    void onLogCardio();
 
 private:
     void buildUi();
@@ -62,6 +67,10 @@ private:
     void refreshWorkoutDetails(const QString& keepExercise);
     void populateExerciseTable(const WorkoutSession* session, const QString& keepExercise);
     void updateTotals(const WorkoutSession* session);
+    void updateLogPage();
+
+    // After sets/cardio were logged: redraw (keeping the selection) and save.
+    void refreshAfterChange();
 
     // What the user has selected right now (nullptr / empty if nothing).
     WorkoutSession* selectedWorkout();
@@ -91,6 +100,17 @@ private:
     QPushButton* addExerciseButton_ = nullptr;
     QTableWidget* exerciseTable_ = nullptr;
     QPushButton* removeExerciseButton_ = nullptr;
+
+    // "Log sets or cardio" panel: page 0 = hint, 1 = strength sets, 2 = cardio
+    QGroupBox* logBox_ = nullptr;
+    QStackedWidget* logStack_ = nullptr;
+    QLineEdit* repsEdit_ = nullptr;
+    QLineEdit* setWeightEdit_ = nullptr;
+    QPushButton* addSetButton_ = nullptr;
+    QPushButton* removeSetButton_ = nullptr;
+    QLineEdit* durationEdit_ = nullptr;
+    QLineEdit* distanceEdit_ = nullptr;
+    QPushButton* logCardioButton_ = nullptr;
 
     QLabel* totalLabel_ = nullptr;
     QLabel* errorLabel_ = nullptr;
