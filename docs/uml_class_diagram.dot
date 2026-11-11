@@ -1,0 +1,154 @@
+// UML class diagram of the Workout & Meal Tracker (state at the first progress update).
+// Render with: dot -Tpng -Gdpi=110 uml_class_diagram.dot -o uml_class_diagram.png
+digraph WorkoutMealTracker {
+  graph [rankdir=TB, fontname="DejaVu Sans", nodesep=0.45, ranksep=0.7, splines=polyline, labelloc=t, fontsize=20, label="Workout & Meal Tracker - class diagram (first progress update)"];
+  node [fontname="DejaVu Sans", fontsize=10];
+  edge [fontname="DejaVu Sans", fontsize=9];
+  Exercise [shape=plain, label=<
+<table border="1" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="white" color="#444444">
+<tr><td bgcolor="#dbe9f7" align="center">«abstract»<br/><i><b>Exercise</b></i></td></tr>
+<tr><td align="left" balign="left">- name_ : string<br align="left"/>- category_ : Category<br align="left"/>- met_ : double<br align="left"/></td></tr>
+<tr><td align="left" balign="left">+ name() : string<br align="left"/>+ category() : Category<br align="left"/>+ met() : double<br align="left"/><i>+ typeName() : string {pure virtual}</i><br align="left"/><i>+ caloriesBurned(bodyWeightKg) : double {pure virtual}</i><br align="left"/><i>+ describe() : string {pure virtual}</i><br align="left"/><i>+ clone() : unique_ptr&lt;Exercise&gt; {pure virtual}</i><br align="left"/><u># caloriesFromMet(met, weightKg, hours) : double</u><br align="left"/>+ virtual ~Exercise()<br align="left"/></td></tr>
+</table>>];
+  StrengthExercise [shape=plain, label=<
+<table border="1" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="white" color="#444444">
+<tr><td bgcolor="#dbe9f7" align="center"><b>StrengthExercise</b></td></tr>
+<tr><td align="left" balign="left">- sets_ : vector&lt;SetEntry&gt;<br align="left"/><u>+ kSecondsPerRep = 4.0</u><br align="left"/><u>+ kRestSecondsPerSet = 60.0</u><br align="left"/></td></tr>
+<tr><td align="left" balign="left">+ addSet(reps, weightKg)<br align="left"/>+ removeLastSet() : bool<br align="left"/>+ clearSets()<br align="left"/>+ setCount() : size_t<br align="left"/>+ totalReps() : int<br align="left"/>+ totalVolumeKg() : double<br align="left"/>+ activeSeconds() : double<br align="left"/>+ typeName() : string<br align="left"/>+ caloriesBurned(bodyWeightKg) : double<br align="left"/>+ describe() : string<br align="left"/>+ clone() : unique_ptr&lt;Exercise&gt;<br align="left"/></td></tr>
+</table>>];
+  SetEntry [shape=plain, label=<
+<table border="1" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="white" color="#444444">
+<tr><td bgcolor="#eeeeee" align="center">«struct»<br/><b>SetEntry</b></td></tr>
+<tr><td align="left" balign="left">+ reps : int<br align="left"/>+ weightKg : double<br align="left"/></td></tr>
+</table>>];
+  CardioExercise [shape=plain, label=<
+<table border="1" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="white" color="#444444">
+<tr><td bgcolor="#dbe9f7" align="center"><b>CardioExercise</b></td></tr>
+<tr><td align="left" balign="left">- durationMin_ : double<br align="left"/>- distanceKm_ : double<br align="left"/></td></tr>
+<tr><td align="left" balign="left">+ logSession(durationMin, distanceKm)<br align="left"/>+ clearSession()<br align="left"/>+ isLogged() : bool<br align="left"/>+ durationMin() : double<br align="left"/>+ distanceKm() : double<br align="left"/>+ averageSpeedKmh() : double<br align="left"/>+ typeName() : string<br align="left"/>+ caloriesBurned(bodyWeightKg) : double<br align="left"/>+ describe() : string<br align="left"/>+ clone() : unique_ptr&lt;Exercise&gt;<br align="left"/></td></tr>
+</table>>];
+  Category [shape=plain, label=<
+<table border="1" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="white" color="#444444">
+<tr><td bgcolor="#eeeeee" align="center">«enum class»<br/><b>Category</b></td></tr>
+<tr><td align="left" balign="left">Chest<br align="left"/>Back<br align="left"/>Legs<br align="left"/>Shoulders<br align="left"/>Arms<br align="left"/>Core<br align="left"/>Cardio<br align="left"/></td></tr>
+</table>>];
+  UserProfile [shape=plain, label=<
+<table border="1" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="white" color="#444444">
+<tr><td bgcolor="#dbe9f7" align="center"><b>UserProfile</b></td></tr>
+<tr><td align="left" balign="left">- name_ : string<br align="left"/>- age_ : int<br align="left"/>- heightCm_ : double<br align="left"/>- weightKg_ : double<br align="left"/>- dailyCalorieGoal_ : int<br align="left"/></td></tr>
+<tr><td align="left" balign="left">+ UserProfile()<br align="left"/>+ UserProfile(name, age, heightCm, weightKg, goal)<br align="left"/>+ name() / age() / heightCm() / weightKg() / dailyCalorieGoal()<br align="left"/>+ setName(name) / setAge(age) / setHeightCm(h)<br align="left"/>+ setWeightKg(w) / setDailyCalorieGoal(kcal)<br align="left"/>+ bmi() : double<br align="left"/></td></tr>
+</table>>];
+  ExerciseLibrary [shape=plain, label=<
+<table border="1" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="white" color="#444444">
+<tr><td bgcolor="#dbe9f7" align="center"><b>ExerciseLibrary</b></td></tr>
+<tr><td align="left" balign="left">- byName_ : map&lt;string, shared_ptr&lt;const Exercise&gt;&gt;<br align="left"/></td></tr>
+<tr><td align="left" balign="left"><u>+ builtInDefaults() : ExerciseLibrary</u><br align="left"/>+ add(unique_ptr&lt;Exercise&gt;)<br align="left"/>+ remove(name) : bool<br align="left"/>+ find(name) : shared_ptr&lt;const Exercise&gt;<br align="left"/>+ search(nameQuery, category?) : vector&lt;ExercisePtr&gt;<br align="left"/>+ all() : vector&lt;ExercisePtr&gt;<br align="left"/>+ size() : size_t<br align="left"/>+ empty() : bool<br align="left"/></td></tr>
+</table>>];
+  WorkoutSession [shape=plain, label=<
+<table border="1" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="white" color="#444444">
+<tr><td bgcolor="#dbe9f7" align="center"><b>WorkoutSession</b></td></tr>
+<tr><td align="left" balign="left">- name_ : string<br align="left"/>- date_ : string  (YYYY-MM-DD)<br align="left"/>- exercises_ : vector&lt;unique_ptr&lt;Exercise&gt;&gt;<br align="left"/></td></tr>
+<tr><td align="left" balign="left">+ WorkoutSession(name, isoDate)<br align="left"/>+ WorkoutSession(const WorkoutSession&amp;)  [deep copy]<br align="left"/>+ operator=(const WorkoutSession&amp;)<br align="left"/>+ addExercise(unique_ptr&lt;Exercise&gt;) : Exercise&amp;<br align="left"/>+ removeExercise(name) : bool<br align="left"/>+ findExercise(name) : Exercise*<br align="left"/>+ exerciseCount() : size_t<br align="left"/>+ totalCaloriesBurned(bodyWeightKg) : double<br align="left"/>+ operator&lt;(rhs) : bool<br align="left"/>+ «friend» operator&lt;&lt;(ostream&amp;, session) : ostream&amp;<br align="left"/></td></tr>
+</table>>];
+  WorkoutLog [shape=plain, label=<
+<table border="1" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="white" color="#444444">
+<tr><td bgcolor="#dbe9f7" align="center"><b>WorkoutLog</b></td></tr>
+<tr><td align="left" balign="left">- sessions_ : vector&lt;WorkoutSession&gt;  (kept sorted)<br align="left"/></td></tr>
+<tr><td align="left" balign="left">+ add(WorkoutSession)<br align="left"/>+ remove(isoDate, name) : bool<br align="left"/>+ find(isoDate, name) : WorkoutSession*<br align="left"/>+ sessionsOn(isoDate) : vector&lt;const WorkoutSession*&gt;<br align="left"/>+ caloriesBurnedOn(isoDate, weightKg) : double<br align="left"/>+ size() : size_t<br align="left"/>+ empty() : bool<br align="left"/></td></tr>
+</table>>];
+  DataManager [shape=plain, label=<
+<table border="1" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="white" color="#444444">
+<tr><td bgcolor="#dbe9f7" align="center"><b>DataManager</b></td></tr>
+<tr><td align="left" balign="left">- dataDir_ : string<br align="left"/><u>+ kProfileFile = "profile.json"</u><br align="left"/><u>+ kWorkoutsFile = "workouts.json"</u><br align="left"/><u>+ kLibraryFile = "exercise_library.json"</u><br align="left"/></td></tr>
+<tr><td align="left" balign="left">+ DataManager(dataDir)<br align="left"/>+ loadProfile() : LoadResult&lt;UserProfile&gt;<br align="left"/>+ loadLibrary() : LoadResult&lt;ExerciseLibrary&gt;<br align="left"/>+ loadWorkouts() : LoadResult&lt;WorkoutLog&gt;<br align="left"/>+ saveProfile(const UserProfile&amp;)<br align="left"/>+ saveLibrary(const ExerciseLibrary&amp;)<br align="left"/>+ saveWorkouts(const WorkoutLog&amp;)<br align="left"/></td></tr>
+</table>>];
+  LoadResult_T_ [shape=plain, label=<
+<table border="1" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="white" color="#444444">
+<tr><td bgcolor="#fdf1d6" align="center">«template struct»<br/><b>LoadResult&lt;T&gt;</b></td></tr>
+<tr><td align="left" balign="left">+ value : T<br align="left"/>+ status : LoadStatus<br align="left"/>+ message : string<br align="left"/></td></tr>
+<tr><td align="left" balign="left">+ ok() : bool<br align="left"/></td></tr>
+</table>>];
+  LoadStatus [shape=plain, label=<
+<table border="1" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="white" color="#444444">
+<tr><td bgcolor="#eeeeee" align="center">«enum class»<br/><b>LoadStatus</b></td></tr>
+<tr><td align="left" balign="left">Ok<br align="left"/>Missing<br align="left"/>Partial<br align="left"/>Damaged<br align="left"/></td></tr>
+</table>>];
+  std__runtime_error [shape=plain, label=<
+<table border="1" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="white" color="#444444">
+<tr><td bgcolor="#eeeeee" align="center"><b>std::runtime_error</b></td></tr>
+</table>>];
+  TrackerError [shape=plain, label=<
+<table border="1" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="white" color="#444444">
+<tr><td bgcolor="#f9dede" align="center"><b>TrackerError</b></td></tr>
+<tr><td align="left" balign="left">+ what() : const char*<br align="left"/></td></tr>
+</table>>];
+  ValidationError [shape=plain, label=<
+<table border="1" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="white" color="#444444">
+<tr><td bgcolor="#f9dede" align="center"><b>ValidationError</b></td></tr>
+</table>>];
+  DuplicateEntryError [shape=plain, label=<
+<table border="1" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="white" color="#444444">
+<tr><td bgcolor="#f9dede" align="center"><b>DuplicateEntryError</b></td></tr>
+</table>>];
+  DataFileError [shape=plain, label=<
+<table border="1" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="white" color="#444444">
+<tr><td bgcolor="#f9dede" align="center"><b>DataFileError</b></td></tr>
+</table>>];
+  validation [shape=plain, label=<
+<table border="1" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="white" color="#444444">
+<tr><td bgcolor="#fdf1d6" align="center">«namespace»<br/><b>validation</b></td></tr>
+<tr><td align="left" balign="left">+ trim(text) / toLower(text) / formatNumber(value, decimals)<br align="left"/>+ parseInt(text, label) : int<br align="left"/>+ parseDouble(text, label) : double<br align="left"/>+ requireText(raw, label, maxLen) : string<br align="left"/>+ requireInt(v, min, max, label, unit) : int<br align="left"/>+ requireDouble(v, min, max, label, unit) : double<br align="left"/>+ requireBodyWeight(kg) : double<br align="left"/>+ isValidIsoDate(text) : bool<br align="left"/>+ requireIsoDate(text, label) : string<br align="left"/></td></tr>
+</table>>];
+  MainWindow [shape=plain, label=<
+<table border="1" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="white" color="#444444">
+<tr><td bgcolor="#e1f2e1" align="center">«QMainWindow»<br/><b>MainWindow</b></td></tr>
+<tr><td align="left" balign="left">- dataManager_ : DataManager<br align="left"/>- profile_ : UserProfile<br align="left"/>- library_ : ExerciseLibrary<br align="left"/>- log_ : WorkoutLog<br align="left"/>- tabs_ : QTabWidget*<br align="left"/>- bannerLabel_ : QLabel*<br align="left"/></td></tr>
+<tr><td align="left" balign="left">- loadData()<br align="left"/>- buildUi()<br align="left"/>- showBanner(text, isError)<br align="left"/>- showStatus(text)<br align="left"/></td></tr>
+</table>>];
+  ProfileTab [shape=plain, label=<
+<table border="1" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="white" color="#444444">
+<tr><td bgcolor="#e1f2e1" align="center">«QWidget»<br/><b>ProfileTab</b></td></tr>
+<tr><td align="left" balign="left">- profile_ : UserProfile&amp;<br align="left"/>- dataManager_ : const DataManager&amp;<br align="left"/>- nameEdit_, ageEdit_, heightEdit_, weightEdit_, goalEdit_ : QLineEdit*<br align="left"/>- bmiLabel_, errorLabel_ : QLabel*<br align="left"/></td></tr>
+<tr><td align="left" balign="left">- onSaveClicked()<br align="left"/>- showProfile()<br align="left"/>«signal» profileSaved()<br align="left"/>«signal» statusMessage(text)<br align="left"/></td></tr>
+</table>>];
+  WorkoutsTab [shape=plain, label=<
+<table border="1" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="white" color="#444444">
+<tr><td bgcolor="#e1f2e1" align="center">«QWidget»<br/><b>WorkoutsTab</b></td></tr>
+<tr><td align="left" balign="left">- library_ : const ExerciseLibrary&amp;<br align="left"/>- log_ : WorkoutLog&amp;<br align="left"/>- profile_ : const UserProfile&amp;<br align="left"/>- dataManager_ : const DataManager&amp;<br align="left"/>- workoutList_, libraryList_ : QListWidget*<br align="left"/>- exerciseTable_ : QTableWidget*<br align="left"/>- logStack_ : QStackedWidget*<br align="left"/></td></tr>
+<tr><td align="left" balign="left">- onCreateWorkout() / onDeleteWorkout()<br align="left"/>- onAddExercise() / onRemoveExercise()<br align="left"/>- onAddSet() / onRemoveLastSet() / onLogCardio()<br align="left"/>+ refreshCalories()  «slot»<br align="left"/>«signal» statusMessage(text)<br align="left"/></td></tr>
+</table>>];
+
+  // inheritance
+  Exercise -> StrengthExercise [dir="back", arrowtail="empty", arrowhead="none"];
+  Exercise -> CardioExercise [dir="back", arrowtail="empty", arrowhead="none"];
+  std__runtime_error -> TrackerError [dir="back", arrowtail="empty", arrowhead="none"];
+  TrackerError -> ValidationError [dir="back", arrowtail="empty", arrowhead="none"];
+  TrackerError -> DuplicateEntryError [dir="back", arrowtail="empty", arrowhead="none"];
+  TrackerError -> DataFileError [dir="back", arrowtail="empty", arrowhead="none"];
+  // composition / aggregation
+  StrengthExercise -> SetEntry [headlabel="0..*", labeldistance="2.2", dir="both", arrowtail="diamond", arrowhead="none"];
+  WorkoutSession -> Exercise [headlabel="0..*", labeldistance="2.2", label="  owns (unique_ptr)", dir="both", arrowtail="diamond", arrowhead="none"];
+  WorkoutLog -> WorkoutSession [headlabel="0..*", labeldistance="2.2", dir="both", arrowtail="diamond", arrowhead="none"];
+  ExerciseLibrary -> Exercise [headlabel="0..*", labeldistance="2.2", label="  shares (shared_ptr)", dir="both", arrowtail="odiamond", arrowhead="none"];
+  MainWindow -> ProfileTab [dir="both", arrowtail="diamond", arrowhead="none"];
+  MainWindow -> WorkoutsTab [dir="both", arrowtail="diamond", arrowhead="none"];
+  MainWindow -> DataManager [dir="both", arrowtail="diamond", arrowhead="none"];
+  MainWindow -> UserProfile [dir="both", arrowtail="diamond", arrowhead="none"];
+  MainWindow -> ExerciseLibrary [dir="both", arrowtail="diamond", arrowhead="none"];
+  MainWindow -> WorkoutLog [dir="both", arrowtail="diamond", arrowhead="none"];
+  // associations and dependencies
+  Exercise -> Category [arrowhead="vee"];
+  DataManager -> LoadResult_T_ [label="  returns", style="dashed", arrowhead="vee"];
+  LoadResult_T_ -> LoadStatus [arrowhead="vee"];
+  ProfileTab -> UserProfile [label="  edits", style="dashed", arrowhead="vee"];
+  WorkoutsTab -> WorkoutLog [label="  edits", style="dashed", arrowhead="vee"];
+  WorkoutsTab -> ExerciseLibrary [label="  searches", style="dashed", arrowhead="vee"];
+  WorkoutsTab -> UserProfile [label="  reads weight", style="dashed", arrowhead="vee"];
+  DataManager -> UserProfile [label="  load / save", style="dashed", arrowhead="vee"];
+  DataManager -> WorkoutLog [label="  load / save", style="dashed", arrowhead="vee"];
+  DataManager -> ExerciseLibrary [label="  load / save", style="dashed", arrowhead="vee"];
+  DataManager -> DataFileError [label="  throws", style="dashed", arrowhead="vee"];
+  { rank=same; StrengthExercise; CardioExercise; SetEntry; Category; }
+  { rank=same; ProfileTab; WorkoutsTab; }
+  { rank=same; ValidationError; DuplicateEntryError; DataFileError; }
+}
