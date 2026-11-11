@@ -20,6 +20,30 @@ function(wmt_enable_warnings target)
     endif()
 endfunction()
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+# ---- core library: pure C++ logic (no GUI) ----------------------------------
+add_library(wmt_core STATIC
+    src/core/Errors.h
+    src/core/Validation.h
+    src/core/Validation.cpp
+)
+wmt_enable_warnings(wmt_core)
+
+# ---- application ------------------------------------------------------------
 add_executable(WorkoutMealTracker src/main.cpp)
-target_link_libraries(WorkoutMealTracker PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(WorkoutMealTracker PRIVATE wmt_core Qt${QT_VERSION_MAJOR}::Widgets)
 wmt_enable_warnings(WorkoutMealTracker)
+
+# ---- unit tests (QtTest + CTest) --------------------------------------------
+enable_testing()
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Test)
+
+function(wmt_add_test name)
+    add_executable(${name} tests/${name}.cpp)
+    target_link_libraries(${name} PRIVATE wmt_core Qt${QT_VERSION_MAJOR}::Test)
+    wmt_enable_warnings(${name})
+    add_test(NAME ${name} COMMAND ${name})
+endfunction()
+
+wmt_add_test(tst_validation)
