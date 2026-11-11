@@ -30,6 +30,10 @@ add_library(wmt_core STATIC
     src/core/Validation.cpp
     src/core/Exercise.h
     src/core/Exercise.cpp
+    src/core/StrengthExercise.h
+    src/core/StrengthExercise.cpp
+    src/core/CardioExercise.h
+    src/core/CardioExercise.cpp
 )
 wmt_enable_warnings(wmt_core)
 
@@ -50,3 +54,4 @@ function(wmt_add_test name)
 endfunction()
 
 wmt_add_test(tst_validation)
+wmt_add_test(tst_exercises)

@@ -12,6 +12,14 @@ inline QString qs(const std::string& text)
     return QString::fromStdString(text);
 }
 
+// Floating-point comparison with an explicit tolerance (kcal values are estimates).
+#define QVERIFY_CLOSE(actual, expected, tolerance)                                          \
+    QVERIFY2(qAbs((actual) - (expected)) <= (tolerance),                                    \
+             qPrintable(QStringLiteral("actual %1, expected %2 (+/- %3)")                   \
+                            .arg((actual), 0, 'f', 6)                                       \
+                            .arg((expected), 0, 'f', 6)                                     \
+                            .arg((tolerance), 0, 'g', 3)))
+
 // Checks that `expr` throws ExType and that the message contains `needle`.
 // Works with both Qt 5 and Qt 6 (QVERIFY_THROWS_EXCEPTION only exists in newer Qt 6).
 #define EXPECT_THROW_MSG(ExType, expr, needle)                                              \
