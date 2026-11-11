@@ -11,9 +11,9 @@ enum class Category { Chest, Back, Legs, Shoulders, Arms, Core, Cardio };
 const std::vector<Category>& allCategories();
 
 // "Chest", "Back", ...
-std::string toString(Category category);
+std::string categoryToString(Category category);
 
-// Case-insensitive inverse of toString(); throws ValidationError for unknown text.
+// Case-insensitive inverse of categoryToString(); throws ValidationError for unknown text.
 Category categoryFromString(const std::string& text);
 
 // Abstract base class for everything you can do in a workout.

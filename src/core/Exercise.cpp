@@ -12,7 +12,7 @@ const std::vector<Category>& allCategories()
     return categories;
 }
 
-std::string toString(Category category)
+std::string categoryToString(Category category)
 {
     switch (category) {
     case Category::Chest:     return "Chest";
@@ -30,7 +30,7 @@ Category categoryFromString(const std::string& text)
 {
     const std::string wanted = validation::toLower(validation::trim(text));
     for (Category category : allCategories()) {
-        if (validation::toLower(toString(category)) == wanted) {
+        if (validation::toLower(categoryToString(category)) == wanted) {
             return category;
         }
     }
