@@ -25,8 +25,11 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 # ---- core library: pure C++ logic (no GUI) ----------------------------------
 add_library(wmt_core STATIC
     src/core/Errors.h
+    src/core/Limits.h
     src/core/Validation.h
     src/core/Validation.cpp
+    src/core/Exercise.h
+    src/core/Exercise.cpp
 )
 wmt_enable_warnings(wmt_core)
 
