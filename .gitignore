@@ -1,0 +1,23 @@
+# Build output
+build/
+build-*/
+cmake-build-*/
+out/
+
+# Qt Creator / IDE files
+CMakeLists.txt.user*
+*.autosave
+.vscode/
+.idea/
+.vs/
+
+# Compiled objects
+*.o
+*.obj
+*.exe
+*.a
+*.so
+*.dll
+
+# Runtime data written by the app while testing
+*.corrupt
