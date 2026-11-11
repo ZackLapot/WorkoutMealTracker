@@ -7,8 +7,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_AUTOMOC ON)
 
-# Works with Qt 6 (preferred) or Qt 5.15.
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Widgets)
+# Works with Qt 6 (preferred) or Qt 5.15. If both are installed you can force one:
+#   cmake -S . -B build -DWMT_QT_MAJOR=5
+set(WMT_QT_MAJOR "" CACHE STRING "Force Qt 5 or Qt 6 (empty = Qt 6 if found, otherwise Qt 5)")
+if(WMT_QT_MAJOR)
+    set(WMT_QT_NAMES Qt${WMT_QT_MAJOR})
+else()
+    set(WMT_QT_NAMES Qt6 Qt5)
+endif()
+find_package(QT NAMES ${WMT_QT_NAMES} REQUIRED COMPONENTS Core Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets)
 
 # Turn on a sensible set of compiler warnings for one target.
