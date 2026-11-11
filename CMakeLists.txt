@@ -42,7 +42,11 @@ add_library(wmt_core STATIC
     src/core/WorkoutSession.cpp
     src/core/WorkoutLog.h
     src/core/WorkoutLog.cpp
+    src/core/DataManager.h
+    src/core/DataManager.cpp
 )
+# DataManager reads and writes JSON with Qt (only DataManager.cpp includes Qt headers).
+target_link_libraries(wmt_core PRIVATE Qt${QT_VERSION_MAJOR}::Core)
 wmt_enable_warnings(wmt_core)
 
 # ---- application ------------------------------------------------------------
@@ -66,3 +70,4 @@ wmt_add_test(tst_exercises)
 wmt_add_test(tst_profile)
 wmt_add_test(tst_library)
 wmt_add_test(tst_workout)
+wmt_add_test(tst_datamanager)
