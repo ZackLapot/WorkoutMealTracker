@@ -12,6 +12,7 @@
 class QFrame;
 class QLabel;
 class QTabWidget;
+class ProfileTab;
 
 // The application window: a tab widget on top of the core classes.
 //
@@ -40,6 +41,7 @@ private:
     WorkoutLog log_;
 
     QTabWidget* tabs_ = nullptr;
+    ProfileTab* profileTab_ = nullptr;
     QFrame* bannerFrame_ = nullptr;
     QLabel* bannerLabel_ = nullptr;
     QString startupNotice_;

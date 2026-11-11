@@ -53,6 +53,8 @@ wmt_enable_warnings(wmt_core)
 add_library(wmt_gui STATIC
     src/gui/MainWindow.h
     src/gui/MainWindow.cpp
+    src/gui/ProfileTab.h
+    src/gui/ProfileTab.cpp
 )
 target_link_libraries(wmt_gui PUBLIC wmt_core Qt${QT_VERSION_MAJOR}::Widgets)
 wmt_enable_warnings(wmt_gui)
@@ -85,3 +87,11 @@ wmt_add_test(tst_profile)
 wmt_add_test(tst_library)
 wmt_add_test(tst_workout)
 wmt_add_test(tst_datamanager)
+
+# GUI tests need the Widgets library and run without a screen (offscreen platform).
+add_executable(tst_gui tests/tst_gui.cpp)
+target_link_libraries(tst_gui PRIVATE wmt_gui Qt${QT_VERSION_MAJOR}::Test)
+target_compile_definitions(tst_gui PRIVATE WMT_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+wmt_enable_warnings(tst_gui)
+add_test(NAME tst_gui COMMAND tst_gui)
+set_tests_properties(tst_gui PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

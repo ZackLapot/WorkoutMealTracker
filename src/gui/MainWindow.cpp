@@ -1,5 +1,7 @@
 #include "MainWindow.h"
 
+#include "ProfileTab.h"
+
 #include "core/Errors.h"
 
 #include <QAction>
@@ -108,6 +110,10 @@ void MainWindow::buildUi()
     tabs_ = new QTabWidget;
     tabs_->setObjectName("tabs");
     layout->addWidget(tabs_, 1);
+
+    profileTab_ = new ProfileTab(profile_, dataManager_);
+    tabs_->addTab(profileTab_, "Profile");
+    connect(profileTab_, &ProfileTab::statusMessage, this, &MainWindow::showStatus);
 
     setCentralWidget(central);
 
