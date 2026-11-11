@@ -4,14 +4,19 @@
 #include "TestUtils.h"
 #include "core/DataManager.h"
 #include "gui/MainWindow.h"
+#include "gui/WorkoutsTab.h"
 
+#include <QComboBox>
+#include <QDateEdit>
 #include <QFile>
 #include <QFrame>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListWidget>
 #include <QPushButton>
 #include <QStatusBar>
 #include <QTabWidget>
+#include <QTableWidget>
 #include <QTemporaryDir>
 
 #include <memory>
@@ -51,6 +56,33 @@ void setProfileFields(const Fixture& f, const QString& name, const QString& age,
     f.find<QLineEdit>("goalEdit")->setText(goal);
 }
 
+// ---- Workouts tab helpers ----
+
+void createWorkout(const Fixture& f, const QString& name, const QString& isoDate = "2026-11-10")
+{
+    f.find<QLineEdit>("workoutNameEdit")->setText(name);
+    f.find<QDateEdit>("workoutDateEdit")->setDate(QDate::fromString(isoDate, Qt::ISODate));
+    f.find<QPushButton>("createWorkoutButton")->click();
+}
+
+// Types `search` into the library filter, selects the first match and clicks "Add to workout".
+void addFromLibrary(const Fixture& f, const QString& search)
+{
+    f.find<QLineEdit>("searchEdit")->setText(search);
+    f.find<QListWidget>("libraryList")->setCurrentRow(0);
+    f.find<QPushButton>("addExerciseButton")->click();
+}
+
+QString workoutsError(const Fixture& f)
+{
+    return f.find<QLabel>("workoutsError")->text();
+}
+
+QString cell(const Fixture& f, int row, int column)
+{
+    return f.find<QTableWidget>("exerciseTable")->item(row, column)->text();
+}
+
 } // namespace
 
 class TstGui : public QObject {
@@ -67,6 +99,16 @@ private slots:
     void invalidProfileInputShowsMessageAndSavesNothing_data();
     void invalidProfileInputShowsMessageAndSavesNothing();
     void validProfileIsSavedAndShown();
+
+    // Workouts tab: library, workouts, exercises
+    void libraryListCanBeFilteredByNameAndCategory();
+    void createWorkoutValidatesAndLists();
+    void addAndRemoveExercises();
+    void addingNeedsAWorkoutAndALibrarySelection();
+    void removingNeedsASelection();
+    void deleteWorkout();
+    void switchingBetweenWorkoutsShowsTheirExercises();
+    void workoutsSurviveARestart();
 };
 
 // ---- start-up ----------------------------------------------------------------------------
@@ -79,6 +121,8 @@ void TstGui::startsWithEmptyDataFolder()
     auto* tabs = f.find<QTabWidget>("tabs");
     QVERIFY(tabs != nullptr);
     QCOMPARE(tabs->tabText(0), QStringLiteral("Profile"));
+    QCOMPARE(tabs->tabText(1), QStringLiteral("Workouts"));
+    QCOMPARE(tabs->count(), 2);
 
     // first start: friendly info banner about the missing profile
     auto* banner = f.find<QFrame>("banner");
@@ -209,6 +253,212 @@ void TstGui::validProfileIsSavedAndShown()
     f.find<QLineEdit>("weightEdit")->setText("71.5");
     f.find<QPushButton>("saveProfileButton")->click();
     QCOMPARE(f.find<QLabel>("profileError")->text(), QString());
+}
+
+// ---- Workouts tab -------------------------------------------------------------------------------
+
+void TstGui::libraryListCanBeFilteredByNameAndCategory()
+{
+    Fixture f;
+    auto* list = f.find<QListWidget>("libraryList");
+    auto* search = f.find<QLineEdit>("searchEdit");
+    auto* category = f.find<QComboBox>("categoryCombo");
+
+    QCOMPARE(list->count(), 38); // everything
+    QCOMPARE(category->count(), 8); // "All categories" + 7 categories
+
+    search->setText("press");
+    QCOMPARE(list->count(), 4);
+    QVERIFY(list->item(0)->text().startsWith("Bench Press"));
+
+    search->setText("PrEsS"); // case does not matter
+    QCOMPARE(list->count(), 4);
+
+    search->clear();
+    category->setCurrentIndex(category->findText("Cardio"));
+    QCOMPARE(list->count(), 12);
+
+    search->setText("run"); // name and category together
+    QCOMPARE(list->count(), 1);
+    QVERIFY(list->item(0)->text().startsWith("Running"));
+
+    search->setText("zzz"); // no match: empty list, no crash
+    QCOMPARE(list->count(), 0);
+
+    search->clear();
+    category->setCurrentIndex(0);
+    QCOMPARE(list->count(), 38);
+}
+
+void TstGui::createWorkoutValidatesAndLists()
+{
+    Fixture f;
+    auto* list = f.find<QListWidget>("workoutList");
+
+    createWorkout(f, "   "); // blank name
+    QCOMPARE(workoutsError(f), QStringLiteral("Workout name is required."));
+    QCOMPARE(list->count(), 0);
+    QVERIFY(!QFile::exists(f.path("workouts.json")));
+
+    createWorkout(f, QString(61, 'x'));
+    QVERIFY(workoutsError(f).contains("at most 60 characters"));
+    QCOMPARE(list->count(), 0);
+
+    createWorkout(f, "Push Day");
+    QCOMPARE(workoutsError(f), QString());
+    QCOMPARE(list->count(), 1);
+    QVERIFY(list->item(0)->text().contains("2026-11-10"));
+    QVERIFY(list->item(0)->text().contains("Push Day"));
+    QVERIFY(list->item(0)->text().contains("0 exercises"));
+    QCOMPARE(list->currentRow(), 0); // the new workout is selected
+    QCOMPARE(f.find<QLabel>("selectedWorkoutLabel")->text(), QStringLiteral("Workout: Push Day  (2026-11-10)"));
+    QCOMPARE(f.find<QLineEdit>("workoutNameEdit")->text(), QString()); // field cleared
+    QVERIFY(QFile::exists(f.path("workouts.json")));
+
+    // same name + same date is a duplicate, even with different capitals
+    createWorkout(f, "push DAY");
+    QCOMPARE(workoutsError(f), QStringLiteral("A workout named 'push DAY' already exists on 2026-11-10."));
+    QCOMPARE(list->count(), 1);
+
+    // same name on another date, and another name on the same date, are fine
+    createWorkout(f, "Push Day", "2026-11-12");
+    createWorkout(f, "Pull Day", "2026-11-10");
+    QCOMPARE(workoutsError(f), QString());
+    QCOMPARE(list->count(), 3);
+    QVERIFY(list->item(0)->text().contains("2026-11-12")); // newest first
+}
+
+void TstGui::addAndRemoveExercises()
+{
+    Fixture f;
+    createWorkout(f, "Push Day");
+    auto* table = f.find<QTableWidget>("exerciseTable");
+    auto* workouts = f.find<QListWidget>("workoutList");
+
+    addFromLibrary(f, "bench");
+    QCOMPARE(workoutsError(f), QString());
+    QCOMPARE(table->rowCount(), 1);
+    QCOMPARE(cell(f, 0, 0), QStringLiteral("Bench Press"));
+    QCOMPARE(cell(f, 0, 1), QStringLiteral("Chest"));
+    QCOMPARE(cell(f, 0, 2), QStringLiteral("No sets logged"));
+    QCOMPARE(cell(f, 0, 3), QStringLiteral("0")); // nothing logged yet
+    QVERIFY(workouts->item(0)->text().contains("(1 exercise)"));
+
+    // the same exercise twice is rejected with a helpful message
+    addFromLibrary(f, "bench");
+    QCOMPARE(workoutsError(f),
+             QStringLiteral("'Bench Press' is already in this workout. Add more sets to it instead."));
+    QCOMPARE(table->rowCount(), 1);
+
+    addFromLibrary(f, "running");
+    QCOMPARE(workoutsError(f), QString());
+    QCOMPARE(table->rowCount(), 2);
+    QVERIFY(workouts->item(0)->text().contains("(2 exercises)"));
+
+    // remove the first row
+    table->setCurrentCell(0, 0);
+    f.find<QPushButton>("removeExerciseButton")->click();
+    QCOMPARE(workoutsError(f), QString());
+    QCOMPARE(table->rowCount(), 1);
+    QCOMPARE(cell(f, 0, 0), QStringLiteral("Running"));
+
+    // what is on screen is what was saved
+    const auto loaded = DataManager(f.dir.path().toStdString()).loadWorkouts();
+    QVERIFY(loaded.ok());
+    QCOMPARE(static_cast<int>(loaded.value.sessions().front().exerciseCount()), 1);
+
+    // the library template itself is never modified by workouts
+    f.find<QLineEdit>("searchEdit")->setText("bench");
+    QCOMPARE(f.find<QListWidget>("libraryList")->count(), 1);
+}
+
+void TstGui::addingNeedsAWorkoutAndALibrarySelection()
+{
+    Fixture f;
+    f.find<QPushButton>("addExerciseButton")->click();
+    QCOMPARE(workoutsError(f), QStringLiteral("Create or select a workout first."));
+
+    createWorkout(f, "Push Day");
+    QCOMPARE(workoutsError(f), QString());
+    f.find<QPushButton>("addExerciseButton")->click(); // nothing selected in the library
+    QCOMPARE(workoutsError(f), QStringLiteral("Select an exercise from the library first."));
+    QCOMPARE(f.find<QTableWidget>("exerciseTable")->rowCount(), 0);
+}
+
+void TstGui::removingNeedsASelection()
+{
+    Fixture f;
+    f.find<QPushButton>("removeExerciseButton")->click();
+    QCOMPARE(workoutsError(f), QStringLiteral("Create or select a workout first."));
+
+    createWorkout(f, "Push Day");
+    addFromLibrary(f, "bench");
+    f.find<QTableWidget>("exerciseTable")->clearSelection();
+    f.find<QTableWidget>("exerciseTable")->setCurrentCell(-1, -1);
+    f.find<QPushButton>("removeExerciseButton")->click();
+    QCOMPARE(workoutsError(f), QStringLiteral("Select an exercise in the workout to remove."));
+    QCOMPARE(f.find<QTableWidget>("exerciseTable")->rowCount(), 1);
+}
+
+void TstGui::deleteWorkout()
+{
+    Fixture f;
+    f.window->findChild<WorkoutsTab*>()->setConfirmDeletes(false); // no modal dialog in tests
+    auto* list = f.find<QListWidget>("workoutList");
+
+    f.find<QPushButton>("deleteWorkoutButton")->click();
+    QCOMPARE(workoutsError(f), QStringLiteral("Select a workout to delete."));
+
+    createWorkout(f, "Push Day");
+    createWorkout(f, "Pull Day");
+    QCOMPARE(list->count(), 2);
+
+    list->setCurrentRow(0); // "Push Day" sorts after "Pull Day" on the same date, so it is first
+    f.find<QPushButton>("deleteWorkoutButton")->click();
+    QCOMPARE(workoutsError(f), QString());
+    QCOMPARE(list->count(), 1);
+    QCOMPARE(f.find<QLabel>("selectedWorkoutLabel")->text(),
+             QStringLiteral("Select or create a workout on the left to start logging."));
+
+    const auto loaded = DataManager(f.dir.path().toStdString()).loadWorkouts();
+    QCOMPARE(static_cast<int>(loaded.value.size()), 1);
+    QCOMPARE(qs(loaded.value.sessions().front().name()), QStringLiteral("Pull Day"));
+}
+
+void TstGui::switchingBetweenWorkoutsShowsTheirExercises()
+{
+    Fixture f;
+    auto* list = f.find<QListWidget>("workoutList");
+    auto* table = f.find<QTableWidget>("exerciseTable");
+
+    createWorkout(f, "Push Day", "2026-11-10");
+    addFromLibrary(f, "bench");
+    createWorkout(f, "Run", "2026-11-11");
+    addFromLibrary(f, "running");
+    addFromLibrary(f, "cycling");
+
+    QCOMPARE(table->rowCount(), 2); // "Run" is selected (newest)
+    list->setCurrentRow(1);         // "Push Day"
+    QCOMPARE(table->rowCount(), 1);
+    QCOMPARE(cell(f, 0, 0), QStringLiteral("Bench Press"));
+    list->setCurrentRow(0);
+    QCOMPARE(table->rowCount(), 2);
+}
+
+void TstGui::workoutsSurviveARestart()
+{
+    Fixture f;
+    createWorkout(f, "Push Day");
+    addFromLibrary(f, "bench");
+    addFromLibrary(f, "squat");
+    f.close();
+
+    f.open(); // new window, same data folder
+    auto* list = f.find<QListWidget>("workoutList");
+    QCOMPARE(list->count(), 1);
+    QVERIFY(list->item(0)->text().contains("(2 exercises)"));
+    list->setCurrentRow(0);
+    QCOMPARE(f.find<QTableWidget>("exerciseTable")->rowCount(), 2);
 }
 
 QTEST_MAIN(TstGui)

@@ -55,6 +55,8 @@ add_library(wmt_gui STATIC
     src/gui/MainWindow.cpp
     src/gui/ProfileTab.h
     src/gui/ProfileTab.cpp
+    src/gui/WorkoutsTab.h
+    src/gui/WorkoutsTab.cpp
 )
 target_link_libraries(wmt_gui PUBLIC wmt_core Qt${QT_VERSION_MAJOR}::Widgets)
 wmt_enable_warnings(wmt_gui)

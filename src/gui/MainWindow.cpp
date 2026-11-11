@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 
 #include "ProfileTab.h"
+#include "WorkoutsTab.h"
 
 #include "core/Errors.h"
 
@@ -114,6 +115,13 @@ void MainWindow::buildUi()
     profileTab_ = new ProfileTab(profile_, dataManager_);
     tabs_->addTab(profileTab_, "Profile");
     connect(profileTab_, &ProfileTab::statusMessage, this, &MainWindow::showStatus);
+
+    workoutsTab_ = new WorkoutsTab(library_, log_, profile_, dataManager_);
+    tabs_->addTab(workoutsTab_, "Workouts");
+    connect(workoutsTab_, &WorkoutsTab::statusMessage, this, &MainWindow::showStatus);
+
+    // calories depend on body weight, so the Workouts tab must recalculate after a profile change
+    connect(profileTab_, &ProfileTab::profileSaved, workoutsTab_, &WorkoutsTab::refreshCalories);
 
     setCentralWidget(central);
 
