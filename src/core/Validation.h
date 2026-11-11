@@ -44,6 +44,9 @@ int requireInt(int value, int min, int max, const std::string& label,
 double requireDouble(double value, double min, double max, const std::string& label,
                      const std::string& unit = "");
 
+// Body weight used in calorie calculations (see limits::kMinWeightKg/kMaxWeightKg).
+double requireBodyWeight(double weightKg);
+
 // ---- dates -----------------------------------------------------------------
 
 // True for a real calendar date written exactly as YYYY-MM-DD (years 1900-2100).

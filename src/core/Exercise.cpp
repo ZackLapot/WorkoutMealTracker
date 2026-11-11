@@ -46,7 +46,6 @@ Exercise::Exercise(std::string name, Category category, double met)
 
 double Exercise::caloriesFromMet(double met, double bodyWeightKg, double durationHours)
 {
-    validation::requireDouble(bodyWeightKg, limits::kMinWeightKg, limits::kMaxWeightKg,
-                              "Body weight", "kg");
+    validation::requireBodyWeight(bodyWeightKg);
     return met * bodyWeightKg * durationHours;
 }

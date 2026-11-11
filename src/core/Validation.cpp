@@ -1,6 +1,7 @@
 #include "Validation.h"
 
 #include "Errors.h"
+#include "Limits.h"
 
 #include <charconv>
 #include <climits>
@@ -164,6 +165,12 @@ double requireDouble(double value, double min, double max, const std::string& la
         throw ValidationError(message + ".");
     }
     return value;
+}
+
+double requireBodyWeight(double weightKg)
+{
+    return requireDouble(weightKg, limits::kMinWeightKg, limits::kMaxWeightKg, "Body weight",
+                         "kg");
 }
 
 bool isValidIsoDate(const std::string& text)
