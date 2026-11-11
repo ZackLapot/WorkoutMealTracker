@@ -49,9 +49,17 @@ add_library(wmt_core STATIC
 target_link_libraries(wmt_core PRIVATE Qt${QT_VERSION_MAJOR}::Core)
 wmt_enable_warnings(wmt_core)
 
+# ---- GUI library: Qt Widgets screens built on the core library -------------
+add_library(wmt_gui STATIC
+    src/gui/MainWindow.h
+    src/gui/MainWindow.cpp
+)
+target_link_libraries(wmt_gui PUBLIC wmt_core Qt${QT_VERSION_MAJOR}::Widgets)
+wmt_enable_warnings(wmt_gui)
+
 # ---- application ------------------------------------------------------------
 add_executable(WorkoutMealTracker src/main.cpp)
-target_link_libraries(WorkoutMealTracker PRIVATE wmt_core Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(WorkoutMealTracker PRIVATE wmt_gui)
 wmt_enable_warnings(WorkoutMealTracker)
 
 # ---- developer tool: regenerates data/exercise_library.json -----------------
