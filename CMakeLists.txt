@@ -34,6 +34,8 @@ add_library(wmt_core STATIC
     src/core/StrengthExercise.cpp
     src/core/CardioExercise.h
     src/core/CardioExercise.cpp
+    src/core/UserProfile.h
+    src/core/UserProfile.cpp
 )
 wmt_enable_warnings(wmt_core)
 
@@ -55,3 +57,4 @@ endfunction()
 
 wmt_add_test(tst_validation)
 wmt_add_test(tst_exercises)
+wmt_add_test(tst_profile)
